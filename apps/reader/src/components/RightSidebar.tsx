@@ -169,9 +169,11 @@ const AiExplanationView: React.FC<ViewProps> = ({ word }) => {
   }
 
   return (
-    <div className="flex h-full flex-col p-4 text-sm text-on-surface-variant">
-      <div className="mb-2 flex items-center justify-between">
-        <div className="text-base font-medium">{word}</div>
+    <div className="flex h-full flex-col overflow-hidden p-4 text-sm text-on-surface-variant">
+      <div className="mb-2 flex items-center justify-between flex-none">
+        <div className="text-base font-medium truncate" title={word}>
+          {word}
+        </div>
         <button
           className="rounded bg-primary px-3 py-1 text-xs text-on-primary hover:opacity-90 disabled:opacity-50"
           onClick={handleAdd}
@@ -180,19 +182,21 @@ const AiExplanationView: React.FC<ViewProps> = ({ word }) => {
           Add
         </button>
       </div>
-      {loading && (
-        <div className="mb-2 text-xs text-outline">Loading AI explanation...</div>
-      )}
-      {explanation && (
-        <div className="scroll-parent flex-1 overflow-auto rounded bg-surface-variant/30 p-3">
-          <div className="whitespace-pre-wrap text-sm leading-relaxed">
-            {explanation}
+      <div className="flex-1 min-h-0 overflow-auto">
+        {loading && (
+          <div className="mb-2 text-xs text-outline">Loading AI explanation...</div>
+        )}
+        {explanation && (
+          <div className="scroll-parent rounded bg-surface-variant/30 p-3">
+            <div className="whitespace-pre-wrap text-sm leading-relaxed">
+              {explanation}
+            </div>
           </div>
-        </div>
-      )}
-      {!loading && !explanation && (
-        <p className="text-xs text-outline">No explanation yet.</p>
-      )}
+        )}
+        {!loading && !explanation && (
+          <p className="text-xs text-outline">No explanation yet.</p>
+        )}
+      </div>
     </div>
   )
 }
