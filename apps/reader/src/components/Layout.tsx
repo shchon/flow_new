@@ -409,7 +409,8 @@ const Reader: React.FC = ({ className, ...props }: ReaderProps) => {
   return (
     <div
       className={clsx(
-        'Reader flex-1 overflow-hidden',
+        'Reader flex-1',
+        readMode ? 'overflow-hidden' : 'overflow-auto',
         readMode || 'mb-12 sm:mb-0',
         bg,
       )}

@@ -17,7 +17,7 @@ export const Settings: React.FC = () => {
 
   return (
     <Page headline="">
-      <div className="h-full max-h-full overflow-y-auto pr-2 space-y-6">
+      <div className="pr-2 space-y-6">
         <Item title={t('language')}>
           <Select
             value={locale}
