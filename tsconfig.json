@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Default",
+  "compilerOptions": {
+    "composite": false,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "inlineSources": false,
+    "isolatedModules": true,
+    "moduleResolution": "node",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "preserveWatchOutput": true,
+    "skipLibCheck": true,
+    "noUncheckedIndexedAccess": true,
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@flow/reader/*": ["apps/reader/src/*"],
+      "@flow/internal": ["packages/internal/src/index.ts"],
+      "@flow/epubjs/*": ["packages/epubjs/*"]
+    }
+  },
+  "exclude": ["node_modules"]
+}
