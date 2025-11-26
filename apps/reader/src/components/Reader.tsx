@@ -15,7 +15,7 @@ import useTilg from 'tilg'
 import { useSnapshot } from 'valtio'
 
 import { RenditionSpread } from '@flow/epubjs/types/rendition'
-import { navbarState, useAiState } from '@flow/reader/state'
+import { useAiState } from '@flow/reader/state'
 
 import { db } from '../db'
 import { handleFiles } from '../file'
@@ -33,11 +33,7 @@ import { BookTab, reader, useReaderSnapshot } from '../models'
 import { isTouchScreen } from '../platform'
 import { updateCustomStyle } from '../styles'
 
-import {
-  getClickedAnnotation,
-  setClickedAnnotation,
-  Annotations,
-} from './Annotation'
+import { Annotations } from './Annotation'
 import { Tab } from './Tab'
 import { TextSelectionMenu } from './TextSelectionMenu'
 import { DropZone, SplitView, useDndContext, useSplitViewItem } from './base'
@@ -211,7 +207,7 @@ function BookPane({ tab, onMouseDown }: BookPaneProps) {
   const { dark } = useColorScheme()
   const [background] = useBackground()
 
-  const { iframe, rendition, rendered, container } = useSnapshot(tab)
+  const { iframe, rendition, rendered } = useSnapshot(tab)
   const [aiState, setAiState] = useAiState()
 
   useTilg()
@@ -237,8 +233,6 @@ function BookPane({ tab, onMouseDown }: BookPaneProps) {
   }, [])
 
   useSync(tab)
-
-  const setNavbar = useSetRecoilState(navbarState)
   const mobile = useMobile()
 
   const applyCustomStyle = useCallback(() => {
