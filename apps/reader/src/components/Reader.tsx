@@ -310,25 +310,9 @@ function BookPane({ tab, onMouseDown }: BookPaneProps) {
       }
     }
 
-    if (isTouchScreen && container) {
-      if (getClickedAnnotation()) {
-        setClickedAnnotation(false)
-        return
-      }
-
-      const w = container.clientWidth
-      const x = e.clientX % w
-      const threshold = 0.3
-      const side = w * threshold
-
-      if (x < side) {
-        tab.prev()
-      } else if (w - x < side) {
-        tab.next()
-      } else if (mobile) {
-        setNavbar((a) => !a)
-      }
-    }
+    // Disable tap-to-turn-page on touch devices; keep swipe / wheel / keyboard navigation.
+    // Previously, when `isTouchScreen && container`, tapping left/right regions would call
+    // `tab.prev()` / `tab.next()` or toggle navbar. That behavior is now removed on request.
   })
 
   useEventListener(iframe, 'wheel', (e) => {
