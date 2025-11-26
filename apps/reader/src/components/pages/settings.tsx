@@ -2,10 +2,7 @@ import Dexie from 'dexie'
 import { useRouter } from 'next/router'
 import { useState, type ChangeEvent } from 'react'
 
-import {
-  useForceRender,
-  useTranslation,
-} from '@flow/reader/hooks'
+import { useTranslation } from '@flow/reader/hooks'
 import { useSettings, useAiState } from '@flow/reader/state'
 
 import { Button } from '../Button'
@@ -86,16 +83,6 @@ const WebDavSync: React.FC<{
         [field]: e.target.value,
       })
     }
-
-  const buildAuthHeaders = () => {
-    const headers: HeadersInit = {}
-    const username = settings.webdavUsername || ''
-    const password = settings.webdavPassword || ''
-    if (username || password) {
-      headers.Authorization = `Basic ${btoa(`${username}:${password}`)}`
-    }
-    return headers
-  }
 
   const handleUpload = async () => {
     if (!enabled || !settings.webdavUrl) {
