@@ -48,6 +48,7 @@ export const Layout: React.FC = ({ children }) => {
   const [ready, setReady] = useState(false)
   const [showVocabulary, setShowVocabulary] = useState(false)
   const [showQuiz, setShowQuiz] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const setAction = useSetAction()
   const mobile = useMobile()
 
@@ -64,13 +65,25 @@ export const Layout: React.FC = ({ children }) => {
           <ActivityBar
             onOpenVocabulary={() => setShowVocabulary(true)}
             onOpenQuiz={() => setShowQuiz(true)}
+            onOpenSettings={() => setShowSettings(true)}
           />
         )}
-        {mobile === true && <NavigationBar />}
+        {mobile === true && (
+          <NavigationBar onOpenSettings={() => setShowSettings(true)} />
+        )}
         {ready && <SideBar />}
         {ready && <Reader>{children}</Reader>}
         {ready && <RightSidebar />}
       </SplitView>
+      {showSettings && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
+          <div className="h-[80vh] w-[min(960px,100%-32px)] overflow-hidden rounded-2xl bg-surface text-on-surface shadow-2xl">
+            <div className="h-full overflow-y-auto">
+              <Settings />
+            </div>
+          </div>
+        </div>
+      )}
       {showVocabulary && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
           <div className="h-[80vh] w-[min(960px,100%-32px)] overflow-hidden rounded-2xl bg-surface text-on-surface shadow-2xl">
@@ -155,11 +168,13 @@ const viewActions: IViewAction[] = [
 interface ActivityBarProps {
   onOpenVocabulary: () => void
   onOpenQuiz?: () => void
+  onOpenSettings?: () => void
 }
 
 const ActivityBar: React.FC<ActivityBarProps> = ({
   onOpenVocabulary,
   onOpenQuiz,
+  onOpenSettings,
 }) => {
   useSplitViewItem(ActivityBar as React.FC, {
     preferredSize: 48,
@@ -173,6 +188,7 @@ const ActivityBar: React.FC<ActivityBarProps> = ({
         env={Env.Desktop}
         onOpenVocabulary={onOpenVocabulary}
         onOpenQuiz={onOpenQuiz}
+        onOpenSettings={onOpenSettings}
       />
     </div>
   )
@@ -233,7 +249,9 @@ function PageActionBar({
 }: EnvActionBarProps & {
   onOpenVocabulary?: () => void
   onOpenQuiz?: () => void
+  onOpenSettings?: () => void
 }) {
+  const { onOpenSettings } = arguments[0] as { onOpenSettings?: () => void }
   const mobile = useMobile()
   const [action, setAction] = useState('Home')
   const t = useTranslation()
@@ -273,7 +291,11 @@ function PageActionBar({
             active={mobile ? action === name : undefined}
             disabled={disabled}
             onClick={() => {
-              Component ? reader.addTab(Component) : reader.clear()
+              if (name === 'settings') {
+                onOpenSettings?.()
+              } else {
+                Component ? reader.addTab(Component) : reader.clear()
+              }
               setAction(name)
             }}
             key={i}
@@ -297,7 +319,11 @@ function PageActionBar({
   )
 }
 
-function NavigationBar() {
+interface NavigationBarProps {
+  onOpenSettings?: () => void
+}
+
+function NavigationBar({ onOpenSettings }: NavigationBarProps) {
   const r = useReaderSnapshot()
   const readMode = r.focusedTab?.isBook
   const [visible, setVisible] = useRecoilState(navbarState)
@@ -317,7 +343,7 @@ function NavigationBar() {
             className={clsx(visible || 'hidden')}
           />
         ) : (
-          <PageActionBar env={Env.Mobile} />
+          <PageActionBar env={Env.Mobile} onOpenSettings={onOpenSettings} />
         )}
       </div>
     </>
