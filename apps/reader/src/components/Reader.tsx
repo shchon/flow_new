@@ -174,7 +174,11 @@ function ReaderGroup({ index }: ReaderGroupProps) {
         }}
       >
         {group.tabs.map((tab, i) => (
-          <PaneContainer active={i === selectedIndex} key={tab.id}>
+          <PaneContainer
+            active={i === selectedIndex}
+            isPage={!(tab instanceof BookTab)}
+            key={tab.id}
+          >
             {tab instanceof BookTab ? (
               <BookPane tab={tab} onMouseDown={handleMouseDown} />
             ) : (
@@ -189,9 +193,14 @@ function ReaderGroup({ index }: ReaderGroupProps) {
 
 interface PaneContainerProps {
   active: boolean
+  isPage?: boolean
 }
-const PaneContainer: React.FC<PaneContainerProps> = ({ active, children }) => {
-  return <div className={clsx('h-full', active || 'hidden')}>{children}</div>
+const PaneContainer: React.FC<PaneContainerProps> = ({ active, isPage, children }) => {
+  return (
+    <div className={clsx('h-full', active || 'hidden', isPage && 'overflow-auto')}>
+      {children}
+    </div>
+  )
 }
 
 interface BookPaneProps {
