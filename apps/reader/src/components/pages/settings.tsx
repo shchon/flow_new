@@ -1,31 +1,25 @@
-import { useEventListener } from '@literal-ui/hooks'
 import Dexie from 'dexie'
 import { useRouter } from 'next/router'
-import { parseCookies, destroyCookie } from 'nookies'
 import { useState, type ChangeEvent } from 'react'
 
 import {
-  ColorScheme,
-  useColorScheme,
   useForceRender,
   useTranslation,
 } from '@flow/reader/hooks'
 import { useSettings, useAiState } from '@flow/reader/state'
-import { dbx, mapToToken, OAUTH_SUCCESS_MESSAGE } from '@flow/reader/sync'
 
 import { Button } from '../Button'
 import { Checkbox, Select, TextField } from '../Form'
 import { Page } from '../Page'
 
 export const Settings: React.FC = () => {
-  const { scheme, setScheme } = useColorScheme()
   const { asPath, push, locale } = useRouter()
   const [settings, setSettings] = useSettings()
   const [aiState, setAiState] = useAiState()
   const t = useTranslation('settings')
 
   return (
-    <Page headline={t('title')}>
+    <Page headline="">
       <div className="space-y-6">
         <Item title={t('language')}>
           <Select
@@ -39,32 +33,13 @@ export const Settings: React.FC = () => {
             <option value="ja-JP">日本語</option>
           </Select>
         </Item>
-        <Item title={t('color_scheme')}>
-          <Select
-            value={scheme}
-            onChange={(e: ChangeEvent<HTMLSelectElement>) => {
-              setScheme(e.target.value as ColorScheme)
-            }}
-          >
-            <option value="system">{t('color_scheme.system')}</option>
-            <option value="light">{t('color_scheme.light')}</option>
-            <option value="dark">{t('color_scheme.dark')}</option>
-          </Select>
-        </Item>
-        <Item title={t('text_selection_menu')}>
-          <Checkbox
-            name={t('text_selection_menu.enable')}
-            checked={settings.enableTextSelectionMenu}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              setSettings({
-                ...settings,
-                enableTextSelectionMenu: e.target.checked,
-              })
-            }}
-          />
-        </Item>
         <AiConfiguration aiState={aiState} setAiState={setAiState} t={t} />
-        <Synchronization />
+        <WebDavSync
+          settings={settings}
+          setSettings={setSettings}
+          aiState={aiState}
+          setAiState={setAiState}
+        />
         <Item title={t('cache')}>
           <Button
             variant="secondary"
@@ -83,55 +58,170 @@ export const Settings: React.FC = () => {
   )
 }
 
-const Synchronization: React.FC = () => {
-  const cookies = parseCookies()
-  const refreshToken = cookies[mapToToken['dropbox']]
-  const render = useForceRender()
+const WebDavSync: React.FC<{
+  settings: any
+  setSettings: any
+  aiState: any
+  setAiState: any
+}> = ({ settings, setSettings, aiState, setAiState }) => {
+  const [syncing, setSyncing] = useState(false)
+  const [message, setMessage] = useState<string>()
   const t = useTranslation('settings.synchronization')
 
-  useEventListener('message', (e) => {
-    if (e.data === OAUTH_SUCCESS_MESSAGE) {
-      // init app (generate access token, fetch remote data, etc.)
-      window.location.reload()
+  const enabled = settings.webdavEnabled ?? false
+
+  const handleToggle = (e: ChangeEvent<HTMLInputElement>) => {
+    setSettings({
+      ...settings,
+      webdavEnabled: e.target.checked,
+    })
+  }
+
+  const handleChangeField = (
+    field: 'webdavUrl' | 'webdavUsername' | 'webdavPassword',
+  ) =>
+    (e: ChangeEvent<HTMLInputElement>) => {
+      setSettings({
+        ...settings,
+        [field]: e.target.value,
+      })
     }
-  })
+
+  const buildAuthHeaders = () => {
+    const headers: HeadersInit = {}
+    const username = settings.webdavUsername || ''
+    const password = settings.webdavPassword || ''
+    if (username || password) {
+      headers.Authorization = `Basic ${btoa(`${username}:${password}`)}`
+    }
+    return headers
+  }
+
+  const handleUpload = async () => {
+    if (!enabled || !settings.webdavUrl) {
+      setMessage('Please enable WebDAV and fill in the URL.')
+      return
+    }
+    setSyncing(true)
+    setMessage(undefined)
+    try {
+      const res = await fetch('/api/webdav-vocab', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'upload',
+          url: settings.webdavUrl,
+          username: settings.webdavUsername,
+          password: settings.webdavPassword,
+          vocabulary: aiState.vocabulary,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || `HTTP ${res.status} ${res.statusText}`)
+      }
+      setMessage('✓ Vocabulary uploaded to WebDAV.')
+    } catch (error) {
+      setMessage('✗ Failed to upload: ' + String(error))
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  const handleDownload = async () => {
+    if (!enabled || !settings.webdavUrl) {
+      setMessage('Please enable WebDAV and fill in the URL.')
+      return
+    }
+    setSyncing(true)
+    setMessage(undefined)
+    try {
+      const res = await fetch('/api/webdav-vocab', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'download',
+          url: settings.webdavUrl,
+          username: settings.webdavUsername,
+          password: settings.webdavPassword,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || `HTTP ${res.status} ${res.statusText}`)
+      }
+      const { data } = await res.json()
+      const remoteVocab = Array.isArray(data?.vocabulary) ? data.vocabulary : data
+      if (!Array.isArray(remoteVocab)) {
+        throw new Error('Invalid vocabulary format in WebDAV file.')
+      }
+      setAiState((prev: any) => ({
+        ...prev,
+        vocabulary: remoteVocab,
+      }))
+      setMessage('✓ Vocabulary downloaded from WebDAV.')
+    } catch (error) {
+      setMessage('✗ Failed to download: ' + String(error))
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   return (
-    <Item title={t('title')}>
-      <Select>
-        <option value="dropbox">Dropbox</option>
-      </Select>
-      <div className="mt-2">
-        {refreshToken ? (
+    <Item title={t('webdav_title') || 'WebDAV Sync'}>
+      <div className="space-y-3">
+        <p className="text-sm text-on-surface-variant">
+          Configure WebDAV to sync your vocabulary notebook across devices.
+        </p>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            name="enable-webdav"
+            checked={enabled}
+            onChange={handleToggle}
+          />
+          <span className="text-sm text-on-surface-variant">
+            Enable WebDAV Sync
+          </span>
+        </div>
+        <TextField
+          name="webdav-url"
+          placeholder="WebDAV File URL (e.g. https://example.com/dav/vocabulary.json)"
+          value={settings.webdavUrl || ''}
+          onChange={handleChangeField('webdavUrl')}
+        />
+        <TextField
+          name="webdav-username"
+          placeholder="Username"
+          value={settings.webdavUsername || ''}
+          onChange={handleChangeField('webdavUsername')}
+        />
+        <TextField
+          name="webdav-password"
+          type="password"
+          placeholder="Password"
+          value={settings.webdavPassword || ''}
+          onChange={handleChangeField('webdavPassword')}
+        />
+        <div className="flex gap-2">
+          <Button onClick={handleUpload} disabled={syncing || !enabled}>
+            {syncing ? 'Syncing...' : 'Upload Vocabulary'}
+          </Button>
           <Button
             variant="secondary"
-            onClick={() => {
-              destroyCookie(null, mapToToken['dropbox'])
-              render()
-            }}
+            onClick={handleDownload}
+            disabled={syncing || !enabled}
           >
-            {t('unauthorize')}
+            {syncing ? 'Syncing...' : 'Download Vocabulary'}
           </Button>
-        ) : (
-          <Button
-            onClick={() => {
-              const redirectUri =
-                window.location.origin + '/api/callback/dropbox'
-
-              dbx.auth
-                .getAuthenticationUrl(
-                  redirectUri,
-                  JSON.stringify({ redirectUri }),
-                  'code',
-                  'offline',
-                )
-                .then((url) => {
-                  window.open(url as string, '_blank')
-                })
-            }}
-          >
-            {t('authorize')}
-          </Button>
+        </div>
+        {message && (
+          <div className="rounded bg-surface-variant/60 p-3 text-xs text-on-surface-variant">
+            {message}
+          </div>
         )}
       </div>
     </Item>

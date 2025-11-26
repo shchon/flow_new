@@ -30,6 +30,11 @@ export const navbarState = atom<boolean>({
 export interface Settings extends TypographyConfiguration {
   theme?: ThemeConfiguration
   enableTextSelectionMenu?: boolean
+  // WebDAV sync configuration for vocabulary and reading data
+  webdavEnabled?: boolean
+  webdavUrl?: string
+  webdavUsername?: string
+  webdavPassword?: string
 }
 
 export interface TypographyConfiguration {
