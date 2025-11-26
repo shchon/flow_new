@@ -72,8 +72,7 @@ interface ViewProps {
 }
 
 const DictionaryView: React.FC<ViewProps> = ({ word }) => {
-  const [aiState, setAiState] = useAiState()
-  const [adding, setAdding] = useState(false)
+  const [aiState] = useAiState()
 
   if (!word) {
     return (
@@ -92,61 +91,6 @@ const DictionaryView: React.FC<ViewProps> = ({ word }) => {
     src = `${template}${sep}q=${encodeURIComponent(word)}`
   } else {
     src = `https://cn.bing.com/dict/search?q=${encodeURIComponent(word)}`
-  }
-
-  const handleAdd = async () => {
-    if (adding) return
-
-    // If AI config is not ready, at least save the word itself
-    const { baseUrl, apiKey, model } = aiState.config
-    const context = aiState.context ?? word
-
-    if (!baseUrl || !apiKey || !model) {
-      setAiState((prev) => {
-        if (prev.vocabulary.some((v) => v.word === word)) return prev
-        return {
-          ...prev,
-          vocabulary: [...prev.vocabulary, { word }],
-        }
-      })
-      return
-    }
-
-    setAdding(true)
-    try {
-      const res = await fetch('/api/ai-explain', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ word, context, config: aiState.config }),
-      })
-
-      let explanation: string | undefined
-      if (res.ok) {
-        const data = await res.json()
-        explanation = data.explanation
-      }
-
-      setAiState((prev) => {
-        if (prev.vocabulary.some((v) => v.word === word)) return prev
-        return {
-          ...prev,
-          vocabulary: [...prev.vocabulary, { word, explanation }],
-        }
-      })
-    } catch {
-      // On error, still save the word without explanation
-      setAiState((prev) => {
-        if (prev.vocabulary.some((v) => v.word === word)) return prev
-        return {
-          ...prev,
-          vocabulary: [...prev.vocabulary, { word }],
-        }
-      })
-    } finally {
-      setAdding(false)
-    }
   }
 
   return (
