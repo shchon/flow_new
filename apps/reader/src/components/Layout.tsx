@@ -246,12 +246,12 @@ function PageActionBar({
   env,
   onOpenVocabulary,
   onOpenQuiz,
+  onOpenSettings,
 }: EnvActionBarProps & {
   onOpenVocabulary?: () => void
   onOpenQuiz?: () => void
   onOpenSettings?: () => void
 }) {
-  const { onOpenSettings } = arguments[0] as { onOpenSettings?: () => void }
   const mobile = useMobile()
   const [action, setAction] = useState('Home')
   const t = useTranslation()
