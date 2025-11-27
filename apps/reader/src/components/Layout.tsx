@@ -76,10 +76,26 @@ export const Layout: React.FC = ({ children }) => {
         {ready && <RightSidebar />}
       </SplitView>
       {showSettings && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
-          <div className="h-[80vh] w-[min(960px,100%-32px)] overflow-hidden rounded-2xl bg-surface text-on-surface shadow-2xl">
-            <div className="h-full overflow-y-auto">
-              <Settings />
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40"
+          onClick={() => setShowSettings(false)}
+        >
+          <div
+            className="h-[80vh] w-[min(960px,100%-32px)] overflow-hidden rounded-2xl bg-surface text-on-surface shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex h-full flex-col">
+              <div className="flex items-center justify-end border-b border-surface-variant px-4 py-2">
+                <button
+                  className="rounded px-2 py-1 text-sm text-on-surface-variant hover:bg-surface-variant/60"
+                  onClick={() => setShowSettings(false)}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="scroll h-full overflow-y-auto">
+                <Settings />
+              </div>
             </div>
           </div>
         </div>
