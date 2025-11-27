@@ -51,7 +51,20 @@ interface ThemeConfiguration {
   background?: number
 }
 
-export const defaultSettings: Settings = {}
+const envWebdavEnabled =
+  process.env.NEXT_PUBLIC_WEBDAV_ENABLED === 'true' ||
+  process.env.NEXT_PUBLIC_WEBDAV_ENABLED === '1'
+
+const envWebdavUrl = process.env.NEXT_PUBLIC_WEBDAV_URL
+const envWebdavUsername = process.env.NEXT_PUBLIC_WEBDAV_USERNAME
+const envWebdavPassword = process.env.NEXT_PUBLIC_WEBDAV_PASSWORD
+
+export const defaultSettings: Settings = {
+  webdavEnabled: envWebdavEnabled,
+  webdavUrl: envWebdavUrl,
+  webdavUsername: envWebdavUsername,
+  webdavPassword: envWebdavPassword,
+}
 
 const settingsState = atom<Settings>({
   key: 'settings',
@@ -89,17 +102,26 @@ export interface AiState {
   quizContext?: string
 }
 
+const envAiBaseUrl = process.env.NEXT_PUBLIC_AI_BASE_URL
+const envAiModel = process.env.NEXT_PUBLIC_AI_MODEL
+const envAiPrompt = process.env.NEXT_PUBLIC_AI_PROMPT
+const envDictTemplate = process.env.NEXT_PUBLIC_DICTIONARY_URL_TEMPLATE
+const envAiApiKey = process.env.NEXT_PUBLIC_AI_API_KEY
+
 const defaultAiState: AiState = {
   selectedWord: undefined,
   context: undefined,
   sidebarMode: 'dictionary',
   vocabulary: [],
   config: {
-    baseUrl: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
-    model: 'doubao-1-5-lite-32k-250115',
+    baseUrl: envAiBaseUrl || 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
+    model: envAiModel || 'doubao-1-5-lite-32k-250115',
+    apiKey: process.env.NEXT_PUBLIC_AI_API_KEY,
     prompt:
+      envAiPrompt ||
       '根据{context}解释单词 {word} ，如果{word}在{context}中有固定搭配，请提取出英文短语的搭配并解释。\n- 输出要求：\n  1. 用中文解释主要含义\n  2. 给出1个包含该单词的英文例句，并附中文翻译',
-    dictionaryUrlTemplate: 'https://m.youdao.com/dict?le=eng&q={word}',
+    dictionaryUrlTemplate:
+      envDictTemplate || 'https://m.youdao.com/dict?le=eng&q={word}',
   },
   quizContext: undefined,
 }
