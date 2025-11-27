@@ -195,7 +195,7 @@ const WebDavSync: React.FC<{
         />
         <div className="flex gap-2">
           <Button onClick={handleUpload} disabled={syncing || !enabled}>
-            {syncing ? 'Syncing...' : 'Upload Vocabulary'}
+            {syncing ? 'Syncing...' : '上传到云端'}
           </Button>
           <Button
             variant="secondary"

@@ -171,6 +171,20 @@ export const TypographyView: React.FC<PaneViewProps> = (props) => {
             setTypography('zoom', v || undefined)
           }}
         />
+        {scope === TypographyScope.Global && (
+          <NumberField
+            name="Tooltip font size (px)"
+            min={8}
+            max={20}
+            defaultValue={settings.vocabTooltipFontSize}
+            onChange={(v) => {
+              setSettings((prev) => ({
+                ...prev,
+                vocabTooltipFontSize: v || undefined,
+              }))
+            }}
+          />
+        )}
       </Pane>
     </PaneView>
   )

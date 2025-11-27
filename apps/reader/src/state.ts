@@ -35,6 +35,8 @@ export interface Settings extends TypographyConfiguration {
   webdavUrl?: string
   webdavUsername?: string
   webdavPassword?: string
+  // Global font size (px) for vocabulary tooltip popup
+  vocabTooltipFontSize?: number
 }
 
 export interface TypographyConfiguration {
@@ -64,6 +66,7 @@ export const defaultSettings: Settings = {
   webdavUrl: envWebdavUrl,
   webdavUsername: envWebdavUsername,
   webdavPassword: envWebdavPassword,
+  vocabTooltipFontSize: 12,
 }
 
 const settingsState = atom<Settings>({

@@ -14,7 +14,7 @@ import useTilg from 'tilg'
 import { useSnapshot } from 'valtio'
 
 import { RenditionSpread } from '@flow/epubjs/types/rendition'
-import { useAiState } from '@flow/reader/state'
+import { useAiState, useSettings } from '@flow/reader/state'
 
 import { db } from '../db'
 import { handleFiles } from '../file'
@@ -214,6 +214,7 @@ function BookPane({ tab, onMouseDown }: BookPaneProps) {
   const typography = useTypography(tab)
   const { dark } = useColorScheme()
   const [background] = useBackground()
+  const [settings] = useSettings()
 
   const { iframe, rendition, rendered } = useSnapshot(tab)
   const [aiState, setAiState] = useAiState()
@@ -411,6 +412,8 @@ function BookPane({ tab, onMouseDown }: BookPaneProps) {
       return
     }
 
+    const tooltipFontSize = settings.vocabTooltipFontSize ?? 12
+
     highlightVocabularyInDocument(doc, vocab, (word) => {
       setAiState((prev) => ({
         ...prev,
@@ -418,8 +421,8 @@ function BookPane({ tab, onMouseDown }: BookPaneProps) {
           (v) => v.word.toLowerCase() !== word.toLowerCase(),
         ),
       }))
-    })
-  }, [iframe, aiState.vocabulary, setAiState])
+    }, tooltipFontSize)
+  }, [iframe, aiState.vocabulary, setAiState, settings.vocabTooltipFontSize])
 
   return (
     <div className={clsx('flex h-full flex-col', mobile && 'py-[3vw]')}>
@@ -481,6 +484,7 @@ function highlightVocabularyInDocument(
   doc: Document,
   vocabulary: VocabItem[],
   onDelete: (word: string) => void,
+  tooltipFontSize: number,
 ) {
   clearVocabularyHighlights(doc)
 
@@ -553,6 +557,9 @@ function highlightVocabularyInDocument(
     style.id = 'vocab-style'
     doc.head.appendChild(style)
   }
+  const titleFontSize = tooltipFontSize
+  const bodyFontSize = Math.max(tooltipFontSize - 1, 8)
+
   style.textContent = `
     .vocab-highlight {
       text-decoration-line: underline;
@@ -564,22 +571,28 @@ function highlightVocabularyInDocument(
     }
     #vocab-tooltip {
       position: absolute;
-      max-width: 260px;
+      min-width: 220px;
+      max-width: 360px;
+      max-height: 320px;
+      overflow-y: auto;
       background: #ffffff;
       color: #111827;
       border-radius: 0.5rem;
       box-shadow: 0 10px 25px rgba(0,0,0,0.18);
       padding: 0.5rem 0.75rem;
-      font-size: 12px;
+      font-size: ${titleFontSize}px !important;
       line-height: 1.5;
       z-index: 9999;
     }
     #vocab-tooltip-title {
       font-weight: 600;
       margin-bottom: 0.25rem;
+      font-size: ${titleFontSize}px !important;
     }
     #vocab-tooltip-body {
       white-space: pre-wrap;
+      word-break: break-word;
+      font-size: ${bodyFontSize}px !important;
     }
   `
 
