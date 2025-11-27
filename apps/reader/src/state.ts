@@ -106,7 +106,6 @@ const envAiBaseUrl = process.env.NEXT_PUBLIC_AI_BASE_URL
 const envAiModel = process.env.NEXT_PUBLIC_AI_MODEL
 const envAiPrompt = process.env.NEXT_PUBLIC_AI_PROMPT
 const envDictTemplate = process.env.NEXT_PUBLIC_DICTIONARY_URL_TEMPLATE
-const envAiApiKey = process.env.NEXT_PUBLIC_AI_API_KEY
 
 const defaultAiState: AiState = {
   selectedWord: undefined,
