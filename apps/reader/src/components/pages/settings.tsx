@@ -9,6 +9,9 @@ import { Button } from '../Button'
 import { Checkbox, Select, TextField } from '../Form'
 import { Page } from '../Page'
 
+const envAiPrompt = process.env.NEXT_PUBLIC_AI_PROMPT
+const envAiPromptEnglish = process.env.NEXT_PUBLIC_AI_PROMPT_EN
+
 export const Settings: React.FC = () => {
   const { asPath, push, locale } = useRouter()
   const [settings, setSettings] = useSettings()
@@ -237,6 +240,14 @@ const AiConfiguration: React.FC<{
   const [testResult, setTestResult] = useState<string>()
   const [saved, setSaved] = useState(false)
 
+  const englishPromptTemplate =
+    envAiPromptEnglish ||
+    '根据{context}解释单词 {word} ，如果{word}在{context}中有固定搭配，请提取出英文短语的搭配并解释。注意：请用中文解释主要含义,并附上单词的美国英标; 给出1个包含该单词的英文例句，并附中文翻译.'
+
+  const chinesePromptTemplate =
+    envAiPrompt ||
+    '根据{context}解释 {word} 。注意：请给出在{context}中 {word} 的拼音发音; 并给出1个包含 {word}的例句.'
+
   const handleSave = () => {
     setAiState((prev: any) => ({
       ...prev,
@@ -296,9 +307,33 @@ const AiConfiguration: React.FC<{
             setConfig({ ...config, apiKey: e.target.value })
           }
         />
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-on-surface-variant">AI Prompt</span>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              compact
+              onClick={() =>
+                setConfig({ ...config, prompt: englishPromptTemplate })
+              }
+            >
+              英文翻译 Prompt
+            </Button>
+            <Button
+              variant="secondary"
+              compact
+              onClick={() =>
+                setConfig({ ...config, prompt: chinesePromptTemplate })
+              }
+            >
+              中文解释 Prompt
+            </Button>
+          </div>
+        </div>
         <TextField
           name="ai-prompt"
           as="textarea"
+          hideLabel
           placeholder="Custom prompt. You can use {word} and {context} as placeholders."
           value={config.prompt}
           className="min-h-[100px]"

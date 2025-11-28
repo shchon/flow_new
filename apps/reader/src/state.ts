@@ -121,7 +121,7 @@ const defaultAiState: AiState = {
     apiKey: process.env.NEXT_PUBLIC_AI_API_KEY,
     prompt:
       envAiPrompt ||
-      '根据{context}解释单词 {word} ，如果{word}在{context}中有固定搭配，请提取出英文短语的搭配并解释。\n- 输出要求：\n  1. 用中文解释主要含义\n  2. 给出1个包含该单词的英文例句，并附中文翻译',
+      '根据{context}解释 {word} 。注意：请给出在{context}中 {word} 的拼音发音; 并给出1个包含 {word}的例句.',
     dictionaryUrlTemplate:
       envDictTemplate || 'https://m.youdao.com/dict?le=eng&q={word}',
   },
