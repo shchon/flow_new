@@ -10,6 +10,7 @@ export const RightSidebar: React.FC = () => {
   const mobile = useMobile()
   const [aiState, setAiState] = useAiState()
   const [isOpen, setIsOpen] = useState(false)
+  const [expanded, setExpanded] = useState(false)
 
   const hasWord = !!aiState.selectedWord
 
@@ -26,7 +27,11 @@ export const RightSidebar: React.FC = () => {
     visible: isOpen,
   })
 
-  if (mobile || !isOpen) return null
+  if (!isOpen) return null
+
+  const containerClass = mobile
+    ? 'RightSidebar fixed inset-x-0 bottom-0 z-40 bg-surface flex flex-col border-t border-surface-variant shadow-xl rounded-t-2xl'
+    : 'RightSidebar bg-surface flex flex-col border-l border-surface-variant'
 
   const handleClose = () => {
     setIsOpen(false)
@@ -38,32 +43,59 @@ export const RightSidebar: React.FC = () => {
     }, 300)
   }
 
+  const mobileStyle = mobile
+    ? { height: expanded ? '88vh' : '55vh' }
+    : undefined
+
   return (
-    <div
-      className="RightSidebar bg-surface flex flex-col border-l border-surface-variant"
-      style={{ width: size }}
-    >
-      <div className="flex items-center justify-between border-b-2 border-outline/20 bg-surface shadow-sm px-3 py-2">
+    <>
+      {mobile && (
+        <div
+          className="fixed inset-0 z-30 bg-black/30"
+          onClick={handleClose}
+        />
+      )}
+      <div
+        className={containerClass}
+        style={mobile ? mobileStyle : { width: size }}
+      >
+        {mobile && (
+          <button
+            className="mx-auto mt-1 mb-1 h-1.5 w-16 rounded-full bg-outline/40"
+            onClick={() => setExpanded((v) => !v)}
+            aria-label={expanded ? 'Collapse AI panel' : 'Expand AI panel'}
+          />
+        )}
+        <div className="flex items-center justify-between border-b-2 border-outline/20 bg-surface shadow-sm px-3 py-2">
         <div className="text-sm font-medium text-on-surface-variant">
           {aiState.selectedWord || 'No word selected'}
         </div>
-        <button
-          className="px-3 py-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/50 transition-colors rounded"
-          onClick={handleClose}
-          title="Close"
-        >
-          <MdClose size={18} />
-        </button>
-      </div>
-      <div className="flex-1 overflow-hidden flex flex-col">
-        <div className="flex-[4] min-h-0 border-b border-surface-variant">
-          <AiExplanationView word={aiState.selectedWord} />
+          <button
+            className="px-3 py-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/50 transition-colors rounded"
+            onClick={handleClose}
+            title="Close"
+          >
+            <MdClose size={18} />
+          </button>
         </div>
-        <div className="flex-[6] min-h-0">
-          <DictionaryView word={aiState.selectedWord} />
+        <div className="flex-1 overflow-hidden flex flex-col">
+          {mobile ? (
+            <div className="flex-1 min-h-0">
+              <AiExplanationView word={aiState.selectedWord} />
+            </div>
+          ) : (
+            <>
+              <div className="flex-[4] min-h-0 border-b border-surface-variant">
+                <AiExplanationView word={aiState.selectedWord} />
+              </div>
+              <div className="flex-[6] min-h-0">
+                <DictionaryView word={aiState.selectedWord} />
+              </div>
+            </>
+          )}
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
@@ -169,7 +201,7 @@ const AiExplanationView: React.FC<ViewProps> = ({ word }) => {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden p-4 text-sm text-on-surface-variant">
+    <div className="flex h-full flex-col overflow-hidden p-4 text-sm text-on-surface-variant select-text">
       <div className="mb-2 flex items-center justify-between flex-none">
         <div className="text-base font-medium truncate" title={word}>
           {word}

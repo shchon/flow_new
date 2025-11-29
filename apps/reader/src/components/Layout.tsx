@@ -11,6 +11,7 @@ import {
   MdToc,
   MdTimeline,
   MdOutlineLightMode,
+  MdOutlineLightbulb,
 } from 'react-icons/md'
 import { RiBook2Line, RiFontSize, RiHome6Line, RiSettings5Line } from 'react-icons/ri'
 import { useRecoilState } from 'recoil'
@@ -69,7 +70,11 @@ export const Layout: React.FC = ({ children }) => {
           />
         )}
         {mobile === true && (
-          <NavigationBar onOpenSettings={() => setShowSettings(true)} />
+          <NavigationBar
+            onOpenSettings={() => setShowSettings(true)}
+            onOpenVocabulary={() => setShowVocabulary(true)}
+            onOpenQuiz={() => setShowQuiz(true)}
+          />
         )}
         {ready && <SideBar />}
         {ready && <Reader>{children}</Reader>}
@@ -167,7 +172,7 @@ const viewActions: IViewAction[] = [
     title: 'annotation',
     Icon: MdFormatUnderlined,
     View: AnnotationView,
-    env: Env.Desktop | Env.Mobile,
+    env: Env.Desktop,
   },
   {
     name: 'image',
@@ -250,6 +255,23 @@ function ViewActionBar({ className, env }: EnvActionBarProps) {
 
   return (
     <ActionBar className={className}>
+      {mobile && (
+        <Action
+          title={t('home.title')}
+          Icon={RiHome6Line}
+          onClick={() => {
+            reader.clear()
+          }}
+        />
+      )}
+      {mobile && (
+        <Action
+          title={t('search.ai') || 'AI'}
+          Icon={MdOutlineLightbulb}
+          active={!!aiState.selectedWord}
+          onClick={handleOpenSidebar}
+        />
+      )}
       {viewActions
         .filter((a) => a.env & env)
         .map(({ name, title, Icon }) => {
@@ -335,14 +357,14 @@ function PageActionBar({
             key={i}
           />
         ))}
-      {onOpenVocabulary && env === Env.Desktop && (
+      {onOpenVocabulary && (
         <Action
           title={t('vocabulary.title') || 'Vocabulary'}
           Icon={RiBook2Line}
           onClick={onOpenVocabulary}
         />
       )}
-      {onOpenQuiz && env === Env.Desktop && (
+      {onOpenQuiz && (
         <Action
           title={t('quiz.title') || 'Generate Quiz'}
           Icon={MdQuiz}
@@ -355,9 +377,11 @@ function PageActionBar({
 
 interface NavigationBarProps {
   onOpenSettings?: () => void
+  onOpenVocabulary?: () => void
+  onOpenQuiz?: () => void
 }
 
-function NavigationBar({ onOpenSettings }: NavigationBarProps) {
+function NavigationBar({ onOpenSettings, onOpenVocabulary, onOpenQuiz }: NavigationBarProps) {
   const r = useReaderSnapshot()
   const readMode = r.focusedTab?.isBook
   const [visible, setVisible] = useRecoilState(navbarState)
@@ -374,10 +398,15 @@ function NavigationBar({ onOpenSettings }: NavigationBarProps) {
         {readMode ? (
           <ViewActionBar
             env={Env.Mobile}
-            className={clsx(visible || 'hidden')}
+            className={undefined}
           />
         ) : (
-          <PageActionBar env={Env.Mobile} onOpenSettings={onOpenSettings} />
+          <PageActionBar
+            env={Env.Mobile}
+            onOpenSettings={onOpenSettings}
+            onOpenVocabulary={onOpenVocabulary}
+            onOpenQuiz={onOpenQuiz}
+          />
         )}
       </div>
     </>

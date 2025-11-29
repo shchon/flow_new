@@ -618,17 +618,12 @@ function highlightVocabularyInDocument(
 
     const title = doc.createElement('div')
     title.id = 'vocab-tooltip-title'
-    title.textContent = item?.word || span.textContent || ''
+    title.style.display = 'flex'
+    title.style.alignItems = 'center'
+    title.style.justifyContent = 'flex-start'
 
-    const body = doc.createElement('div')
-    body.id = 'vocab-tooltip-body'
-    body.textContent = item?.explanation || 'No explanation saved yet.'
-
-    const actions = doc.createElement('div')
-    actions.id = 'vocab-tooltip-actions'
-    actions.style.position = 'absolute'
-    actions.style.top = '4px'
-    actions.style.right = '6px'
+    const wordSpan = doc.createElement('span')
+    wordSpan.textContent = item?.word || span.textContent || ''
 
     const deleteBtn = doc.createElement('button')
     deleteBtn.textContent = 'Delete'
@@ -637,6 +632,7 @@ function highlightVocabularyInDocument(
     deleteBtn.style.cursor = 'pointer'
     deleteBtn.style.background = 'transparent'
     deleteBtn.style.border = 'none'
+    deleteBtn.style.marginLeft = '8px'
     deleteBtn.onclick = (ev) => {
       ev.stopPropagation()
       onDelete(word)
@@ -645,9 +641,13 @@ function highlightVocabularyInDocument(
       }
     }
 
-    actions.appendChild(deleteBtn)
+    title.appendChild(wordSpan)
+    title.appendChild(deleteBtn)
 
-    tooltip.appendChild(actions)
+    const body = doc.createElement('div')
+    body.id = 'vocab-tooltip-body'
+    body.textContent = item?.explanation || 'No explanation saved yet.'
+
     tooltip.appendChild(title)
     tooltip.appendChild(body)
 
