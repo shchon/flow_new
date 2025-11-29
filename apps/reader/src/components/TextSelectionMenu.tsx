@@ -61,11 +61,6 @@ export const TextSelectionMenu: React.FC<TextSelectionMenuProps> = ({
     }
   }, [currentText, currentContext, setAiState])
 
-  // If text selection menu is disabled, don't render it
-  if (settings.enableTextSelectionMenu === false) {
-    return null
-  }
-
   const el = view()?.element as HTMLElement
   if (!el) return null
 
@@ -102,6 +97,11 @@ export const TextSelectionMenu: React.FC<TextSelectionMenuProps> = ({
   if (text !== currentText || fullText !== currentContext) {
     setCurrentText(text)
     setCurrentContext(fullText)
+  }
+
+  // If text selection menu is not explicitly enabled, skip rendering UI
+  if (settings.enableTextSelectionMenu !== true) {
+    return null
   }
 
   return (

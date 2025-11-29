@@ -244,13 +244,11 @@ function ViewActionBar({ className, env }: EnvActionBarProps) {
   const mobile = useMobile()
 
   const handleOpenSidebar = () => {
-    if (!aiState.selectedWord) {
-      setAiState((prev) => ({
-        ...prev,
-        selectedWord: 'example',
-        sidebarMode: 'dictionary',
-      }))
-    }
+    setAiState((prev) => ({
+      ...prev,
+      selectedWord: prev.selectedWord || 'example',
+      sidebarMode: 'ai',
+    }))
   }
 
   return (

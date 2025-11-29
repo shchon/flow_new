@@ -14,12 +14,19 @@ export const RightSidebar: React.FC = () => {
 
   const hasWord = !!aiState.selectedWord
 
-  // Open sidebar when word is selected
+  // Open sidebar when appropriate
   useEffect(() => {
-    if (hasWord) {
+    if (!hasWord) return
+    // Desktop: auto-open when a word is selected
+    if (!mobile) {
+      setIsOpen(true)
+      return
+    }
+    // Mobile: only open when sidebarMode is explicitly set to 'ai'
+    if (aiState.sidebarMode === 'ai') {
       setIsOpen(true)
     }
-  }, [hasWord])
+  }, [hasWord, mobile, aiState.sidebarMode])
 
   const { size } = useSplitViewItem(RightSidebar, {
     preferredSize: 320,
