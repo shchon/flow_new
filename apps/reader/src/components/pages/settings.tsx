@@ -34,6 +34,52 @@ export const Settings: React.FC = () => {
           </Select>
         </Item>
         <AiConfiguration aiState={aiState} setAiState={setAiState} t={t} />
+        <Item title={t('ai_hotkey') || 'AI Shortcuts'}>
+          <div className="space-y-2">
+            <p className="text-sm text-on-surface-variant">
+              设置电脑端触发 AI 解释的快捷键，例如 Ctrl+Shift+Y。
+            </p>
+            <TextField
+              name="ai-hotkey"
+              placeholder="e.g. Ctrl+Shift+Y"
+              value={settings.aiHotkey || ''}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setSettings({ ...settings, aiHotkey: e.target.value })
+              }
+              onKeyDown={(e: any) => {
+                // 记录组合键，而不是输入原始字符
+                const key = e.key
+                const isModifier =
+                  key === 'Control' || key === 'Shift' || key === 'Alt' || key === 'Meta'
+
+                // 只在有实际主键时记录
+                if (isModifier) {
+                  e.preventDefault()
+                  return
+                }
+
+                const parts: string[] = []
+                if (e.ctrlKey || e.metaKey) parts.push('Ctrl')
+                if (e.shiftKey) parts.push('Shift')
+                if (e.altKey) parts.push('Alt')
+
+                let mainKey = key
+                if (mainKey.length === 1) {
+                  mainKey = mainKey.toUpperCase()
+                }
+
+                parts.push(mainKey)
+                const combo = parts.join('+')
+
+                if (combo) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setSettings({ ...settings, aiHotkey: combo })
+                }
+              }}
+            />
+          </div>
+        </Item>
         <WebDavSync
           settings={settings}
           setSettings={setSettings}

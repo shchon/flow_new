@@ -30,6 +30,8 @@ export const navbarState = atom<boolean>({
 export interface Settings extends TypographyConfiguration {
   theme?: ThemeConfiguration
   enableTextSelectionMenu?: boolean
+  // Keyboard shortcut for triggering AI explanation on desktop, e.g. Ctrl+Shift+Y
+  aiHotkey?: string
   // WebDAV sync configuration for vocabulary and reading data
   webdavEnabled?: boolean
   webdavUrl?: string
@@ -67,6 +69,7 @@ export const defaultSettings: Settings = {
   webdavUsername: envWebdavUsername,
   webdavPassword: envWebdavPassword,
   vocabTooltipFontSize: 12,
+  aiHotkey: 'Ctrl+Shift+Y',
 }
 
 const settingsState = atom<Settings>({

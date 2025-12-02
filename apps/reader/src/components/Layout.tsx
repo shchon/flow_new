@@ -251,6 +251,26 @@ function ViewActionBar({ className, env }: EnvActionBarProps) {
     }))
   }
 
+  const handleReadAloud = () => {
+    if (typeof window === 'undefined') return
+    const synth = window.speechSynthesis
+    if (!synth) return
+
+    let text = aiState.context || aiState.selectedWord
+    if (!text) {
+      const sel = window.getSelection()?.toString().trim()
+      if (sel) {
+        text = sel
+      }
+    }
+    if (!text) return
+
+    synth.cancel()
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.lang = 'en-US'
+    synth.speak(utterance)
+  }
+
   return (
     <ActionBar className={className}>
       {mobile && (
@@ -279,7 +299,13 @@ function ViewActionBar({ className, env }: EnvActionBarProps) {
               title={t(`${title}.title`)}
               Icon={Icon}
               active={active}
-              onClick={() => setAction(active ? undefined : name)}
+              onClick={() => {
+                if (mobile && name === 'search') {
+                  handleReadAloud()
+                  return
+                }
+                setAction(active ? undefined : name)
+              }}
               key={name}
             />
           )

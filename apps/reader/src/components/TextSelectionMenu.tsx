@@ -40,6 +40,7 @@ export const TextSelectionMenu: React.FC<TextSelectionMenuProps> = ({
   const [, setAiState] = useAiState()
   const [currentText, setCurrentText] = useState<string | undefined>()
   const [currentContext, setCurrentContext] = useState<string | undefined>()
+  const mobile = useMobile()
 
   // `manager` is not reactive, so we need to use getter
   const view = useCallback(() => {
@@ -49,17 +50,68 @@ export const TextSelectionMenu: React.FC<TextSelectionMenuProps> = ({
   const win = view()?.window
   const [selection, setSelection] = useTextSelection(win)
 
-  // Update AI state when text or context changes
+  // On mobile, update AI state immediately when text/context changes
   useEffect(() => {
-    if (currentText) {
+    if (!currentText || !mobile) return
+    setAiState((prev) => ({
+      ...prev,
+      selectedWord: currentText,
+      context: currentContext ?? currentText,
+      sidebarMode: 'dictionary',
+    }))
+  }, [currentText, currentContext, mobile, setAiState])
+
+  // On desktop, trigger AI update only when user presses the configured hotkey
+  useEffect(() => {
+    if (mobile) return
+
+    const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, '')
+    const expected = normalize(settings.aiHotkey || 'Ctrl+Shift+Y')
+
+    const handleKey = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase()
+
+      // 忽略纯修饰键
+      if (['control', 'shift', 'alt', 'meta'].includes(key)) {
+        return
+      }
+
+      const parts: string[] = []
+      if (e.ctrlKey || e.metaKey) parts.push('ctrl')
+      if (e.shiftKey) parts.push('shift')
+      if (e.altKey) parts.push('alt')
+      parts.push(key)
+
+      const pressed = normalize(parts.join('+'))
+      if (pressed !== expected) return
+
+      // 如果 currentText 还没更新，直接从 iframe 当前选区读取
+      let text = currentText
+      let context = currentContext
+      if (!text && win) {
+        const sel = win.getSelection()
+        const raw = sel?.toString().trim()
+        if (!raw) return
+        text = raw
+        context = raw
+      }
+      if (!text) return
+
+      e.preventDefault()
       setAiState((prev) => ({
         ...prev,
-        selectedWord: currentText,
-        context: currentContext ?? currentText,
+        selectedWord: text,
+        context: context ?? text,
         sidebarMode: 'dictionary',
       }))
     }
-  }, [currentText, currentContext, setAiState])
+
+    const targets: (Window | undefined)[] = [window, win]
+    targets.forEach((tw) => tw?.addEventListener('keydown', handleKey))
+    return () => {
+      targets.forEach((tw) => tw?.removeEventListener('keydown', handleKey))
+    }
+  }, [mobile, currentText, currentContext, settings.aiHotkey, setAiState, win])
 
   const el = view()?.element as HTMLElement
   if (!el) return null
