@@ -695,6 +695,32 @@ const ReaderPaneHeader: React.FC<ReaderPaneHeaderProps> = ({ tab }) => {
     navPath.forEach((i) => (i.expanded = true))
   }, [navPath])
 
+  const handlePageClick = () => {
+    if (!location) return
+    const current = location.start.displayed.page
+    const total = location.start.displayed.total
+    if (!total || total <= 0) return
+
+    const input = window.prompt(`输入页码 (1-${total})`, String(current))
+    if (!input) return
+
+    const target = Number.parseInt(input, 10)
+    if (!Number.isFinite(target) || target < 1 || target > total) return
+
+    const delta = target - current
+    if (delta === 0) return
+
+    try {
+      if (delta > 0) {
+        for (let i = 0; i < delta; i++) tab.next()
+      } else {
+        for (let i = 0; i < -delta; i++) tab.prev()
+      }
+    } catch {
+      // ignore navigation errors
+    }
+  }
+
   return (
     <Bar>
       <div className="scroll-h flex">
@@ -709,9 +735,13 @@ const ReaderPaneHeader: React.FC<ReaderPaneHeaderProps> = ({ tab }) => {
         ))}
       </div>
       {location && (
-        <div className="shrink-0">
+        <button
+          type="button"
+          onClick={handlePageClick}
+          className="hover:text-on-surface shrink-0 underline-offset-2 hover:underline"
+        >
           {location.start.displayed.page} / {location.start.displayed.total}
-        </div>
+        </button>
       )}
     </Bar>
   )

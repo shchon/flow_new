@@ -50,6 +50,29 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({ onClose }) => {
     }
   }, [onClose])
 
+  const handleExportAnki = () => {
+    try {
+      if (!aiState.vocabulary.length) return
+      const lines = aiState.vocabulary.map((item) => {
+        const front = (item.word || '').replace(/\r?\n/g, ' ').trim()
+        const back = (item.explanation || '').replace(/\r?\n/g, ' ').trim()
+        return `${front}\t${back}`
+      })
+      const data = lines.join('\n')
+      const blob = new Blob([data], { type: 'text/tab-separated-values;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'anki-vocabulary.tsv'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch {
+      // ignore download errors
+    }
+  }
+
   const handleExportJson = () => {
     try {
       const data = JSON.stringify(aiState.vocabulary, null, 2)
@@ -131,6 +154,12 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({ onClose }) => {
             className="hidden"
             onChange={handleImportJson}
           />
+          <button
+            onClick={handleExportAnki}
+            className="rounded-full px-2 py-1 text-[11px] text-outline hover:bg-surface-variant/70 hover:text-on-surface-variant"
+          >
+            {t('export_anki') || 'Export Anki'}
+          </button>
           <button
             onClick={handleExportJson}
             className="rounded-full px-2 py-1 text-[11px] text-outline hover:bg-surface-variant/70 hover:text-on-surface-variant"

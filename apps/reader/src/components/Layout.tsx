@@ -13,7 +13,14 @@ import {
   MdOutlineLightMode,
   MdOutlineLightbulb,
 } from 'react-icons/md'
-import { RiBook2Line, RiFontSize, RiHome6Line, RiSettings5Line } from 'react-icons/ri'
+import {
+  RiBook2Line,
+  RiFontSize,
+  RiHome6Line,
+  RiSettings5Line,
+  RiUploadCloud2Line,
+  RiDownloadCloud2Line,
+} from 'react-icons/ri'
 import { useRecoilState } from 'recoil'
 
 import {
@@ -27,7 +34,7 @@ import {
   useTranslation,
 } from '../hooks'
 import { reader, useReaderSnapshot } from '../models'
-import { navbarState, useAiState } from '../state'
+import { navbarState, useAiState, useSettings } from '../state'
 import { activeClass } from '../styles'
 
 import { RightSidebar } from './RightSidebar'
@@ -222,7 +229,7 @@ const ActivityBar: React.FC<ActivityBarProps> = ({
   })
   return (
     <div className="ActivityBar flex flex-col justify-between">
-      <ViewActionBar env={Env.Desktop} />
+      <ViewActionBar env={Env.Desktop} className="sm:flex-col" />
       <PageActionBar
         env={Env.Desktop}
         onOpenVocabulary={onOpenVocabulary}
@@ -240,8 +247,11 @@ interface EnvActionBarProps extends ComponentProps<'div'> {
 function ViewActionBar({ className, env }: EnvActionBarProps) {
   const [action, setAction] = useAction()
   const [aiState, setAiState] = useAiState()
+  const [settings] = useSettings()
   const t = useTranslation()
   const mobile = useMobile()
+
+  const webdavEnabled = settings.webdavEnabled && settings.webdavUrl
 
   const handleOpenSidebar = () => {
     setAiState((prev) => ({
@@ -271,6 +281,76 @@ function ViewActionBar({ className, env }: EnvActionBarProps) {
     synth.speak(utterance)
   }
 
+  const handleWebdavUpload = async () => {
+    if (!webdavEnabled) {
+      window.alert('请先在设置中开启 WebDAV，并填写地址。')
+      return
+    }
+    const ok = window.confirm('上传生词本到 WebDAV？（会覆盖云端文件）')
+    if (!ok) return
+    try {
+      const res = await fetch('/api/webdav-vocab', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'upload',
+          url: settings.webdavUrl,
+          username: settings.webdavUsername,
+          password: settings.webdavPassword,
+          vocabulary: aiState.vocabulary,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || `HTTP ${res.status} ${res.statusText}`)
+      }
+      window.alert('生词本已上传到 WebDAV。')
+    } catch (error) {
+      window.alert('上传失败：' + String(error))
+    }
+  }
+
+  const handleWebdavDownload = async () => {
+    if (!webdavEnabled) {
+      window.alert('请先在设置中开启 WebDAV，并填写地址。')
+      return
+    }
+    const ok = window.confirm('从 WebDAV 下载生词本并覆盖本地？')
+    if (!ok) return
+    try {
+      const res = await fetch('/api/webdav-vocab', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'download',
+          url: settings.webdavUrl,
+          username: settings.webdavUsername,
+          password: settings.webdavPassword,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || `HTTP ${res.status} ${res.statusText}`)
+      }
+      const { data } = await res.json()
+      const remoteVocab = Array.isArray(data?.vocabulary) ? data.vocabulary : data
+      if (!Array.isArray(remoteVocab)) {
+        throw new Error('Invalid vocabulary format in WebDAV file.')
+      }
+      setAiState((prev: any) => ({
+        ...prev,
+        vocabulary: remoteVocab,
+      }))
+      window.alert('已从 WebDAV 下载生词本。')
+    } catch (error) {
+      window.alert('下载失败：' + String(error))
+    }
+  }
+
   return (
     <ActionBar className={className}>
       {mobile && (
@@ -294,6 +374,10 @@ function ViewActionBar({ className, env }: EnvActionBarProps) {
         .filter((a) => a.env & env)
         .map(({ name, title, Icon }) => {
           const active = action === name
+          if (name === 'theme') {
+            // 主题图标单独渲染，用来放在上传/下载中间
+            return null
+          }
           return (
             <Action
               title={t(`${title}.title`)}
@@ -310,6 +394,29 @@ function ViewActionBar({ className, env }: EnvActionBarProps) {
             />
           )
         })}
+      <Action
+        title={t('settings.synchronization.webdav_upload') || 'Upload to WebDAV'}
+        Icon={RiUploadCloud2Line}
+        disabled={!webdavEnabled}
+        onClick={handleWebdavUpload}
+      />
+      <Action
+        title={t('theme.title')}
+        Icon={MdOutlineLightMode}
+        active={action === 'theme'}
+        onClick={() => {
+          const activeTheme = action === 'theme'
+          setAction(activeTheme ? undefined : 'theme')
+        }}
+      />
+      <Action
+        title={
+          t('settings.synchronization.webdav_download') || 'Download from WebDAV'
+        }
+        Icon={RiDownloadCloud2Line}
+        disabled={!webdavEnabled}
+        onClick={handleWebdavDownload}
+      />
       {!mobile && (
         <Action
           title="Dictionary & AI"
@@ -440,7 +547,7 @@ function NavigationBar({ onOpenSettings, onOpenVocabulary, onOpenQuiz }: Navigat
 interface ActionBarProps extends ComponentProps<'ul'> {}
 function ActionBar({ className, ...props }: ActionBarProps) {
   return (
-    <ul className={clsx('ActionBar flex sm:flex-col', className)} {...props} />
+    <ul className={clsx('ActionBar flex', className)} {...props} />
   )
 }
 

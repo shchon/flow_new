@@ -37,7 +37,9 @@ export const RightSidebar: React.FC = () => {
   if (!isOpen) return null
 
   const containerClass = mobile
-    ? 'RightSidebar fixed inset-x-0 bottom-0 z-40 bg-surface flex flex-col border-t border-surface-variant shadow-xl rounded-t-2xl'
+    ? aiState.panelPosition === 'top'
+      ? 'RightSidebar fixed inset-x-0 top-0 z-40 bg-surface flex flex-col border-b border-surface-variant shadow-xl rounded-b-2xl'
+      : 'RightSidebar fixed inset-x-0 bottom-0 z-40 bg-surface flex flex-col border-t border-surface-variant shadow-xl rounded-t-2xl'
     : 'RightSidebar bg-surface flex flex-col border-l border-surface-variant'
 
   const handleClose = () => {
@@ -51,7 +53,7 @@ export const RightSidebar: React.FC = () => {
   }
 
   const mobileStyle = mobile
-    ? { height: expanded ? '88vh' : '55vh' }
+    ? { height: expanded ? '90vh' : '33vh' }
     : undefined
 
   return (
@@ -87,7 +89,7 @@ export const RightSidebar: React.FC = () => {
         </div>
         <div className="flex-1 overflow-hidden flex flex-col">
           {mobile ? (
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y">
               <AiExplanationView word={aiState.selectedWord} />
             </div>
           ) : (

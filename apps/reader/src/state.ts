@@ -106,6 +106,7 @@ export interface AiState {
   vocabulary: VocabularyItem[]
   config: AiConfig
   quizContext?: string
+  panelPosition?: 'top' | 'bottom'
 }
 
 const envAiBaseUrl = process.env.NEXT_PUBLIC_AI_BASE_URL
@@ -129,6 +130,7 @@ const defaultAiState: AiState = {
       envDictTemplate || 'https://m.youdao.com/dict?le=eng&q={word}',
   },
   quizContext: undefined,
+  panelPosition: 'bottom',
 }
 
 const aiState = atom<AiState>({

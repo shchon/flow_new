@@ -149,6 +149,18 @@ export const TextSelectionMenu: React.FC<TextSelectionMenuProps> = ({
   if (text !== currentText || fullText !== currentContext) {
     setCurrentText(text)
     setCurrentContext(fullText)
+
+    // 记录当前选区在屏幕中的垂直位置，用于决定移动端 AI 抽屉从上还是从下弹出
+    const viewportHeight = win?.innerHeight ?? window.innerHeight
+    if (viewportHeight) {
+      const centerY = anchorRect.top + anchorRect.height / 2
+      const panelPosition: 'top' | 'bottom' =
+        centerY > viewportHeight / 2 ? 'top' : 'bottom'
+      setAiState((prev) => ({
+        ...prev,
+        panelPosition,
+      }))
+    }
   }
 
   // If text selection menu is not explicitly enabled, skip rendering UI
