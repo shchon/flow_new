@@ -39,9 +39,6 @@ const config = {
   webpack(config) {
     return config
   },
-  const nextConfig = {
-    output: 'export',
-  }，
   i18n: {
     locales: ['en-US', 'zh-CN', 'ja-JP'],
     defaultLocale: 'en-US',
@@ -65,4 +62,7 @@ const prod = withSentryConfig(
   sentryWebpackPluginOptions,
 )
 
-module.exports = nextConfig
+// For now, always export the base config. Environment-specific tweaks are
+// applied via plugins (Sentry, PWA, etc.). This keeps Vercel builds working
+// while allowing `next export` to be run locally for static output.
+module.exports = base
