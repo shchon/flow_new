@@ -39,6 +39,9 @@ const config = {
   webpack(config) {
     return config
   },
+  const nextConfig = {
+    output: 'export',
+  }，
   i18n: {
     locales: ['en-US', 'zh-CN', 'ja-JP'],
     defaultLocale: 'en-US',
@@ -62,4 +65,4 @@ const prod = withSentryConfig(
   sentryWebpackPluginOptions,
 )
 
-module.exports = IS_DEV ? dev : IS_DOCKER ? docker : prod
+module.exports = nextConfig

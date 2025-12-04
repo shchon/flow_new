@@ -328,6 +328,56 @@ export class BookTab extends BaseTab {
 
   private _el?: HTMLDivElement
   onRender?: () => void
+
+  private async preloadSections() {
+    if (!this.epub || !this.sections) return
+
+    const loadSection = async (section: ISection) => {
+      if (section.document) return
+      await section.load(this.epub!.load.bind(this.epub))
+      const doc = section.document as any
+      section.length = doc.body?.textContent?.length ?? 0
+      section.images = [...doc.querySelectorAll('img')].map(
+        (el: HTMLImageElement) => el.src,
+      )
+      this.epub!.loaded.navigation.then(() => {
+        section.navitem = this.mapSectionToNavItem(section.href)
+      })
+    }
+
+    const sections = this.sections
+
+    let index = 0
+    const step = () => {
+      if (!this.epub || !this.sections) return
+      const start = index
+      const end = Math.min(start + 3, sections.length)
+
+      const tasks: Promise<void>[] = []
+      for (let i = start; i < end; i++) {
+        tasks.push(loadSection(sections[i]!))
+      }
+
+      index = end
+
+      Promise.all(tasks).finally(() => {
+        if (index < sections.length) {
+          if (typeof requestIdleCallback !== 'undefined') {
+            requestIdleCallback(() => step())
+          } else {
+            setTimeout(() => step(), 0)
+          }
+        }
+      })
+    }
+
+    if (typeof requestIdleCallback !== 'undefined') {
+      requestIdleCallback(() => step())
+    } else {
+      setTimeout(() => step(), 0)
+    }
+  }
+
   async render(el: HTMLDivElement) {
     if (el === this._el) return
     this._el = ref(el)
@@ -344,20 +394,12 @@ export class BookTab extends BaseTab {
     this.epub.loaded.spine.then((spine: any) => {
       const sections = spine.spineItems as ISection[]
       // https://github.com/futurepress/epub.js/issues/887#issuecomment-700736486
-      const promises = sections.map((s) =>
-        s.load(this.epub?.load.bind(this.epub)),
-      )
-
-      Promise.all(promises).then(() => {
-        sections.forEach((s) => {
-          s.length = s.document.body.textContent?.length ?? 0
-          s.images = [...s.document.querySelectorAll('img')].map((el) => el.src)
-          this.epub!.loaded.navigation.then(() => {
-            s.navitem = this.mapSectionToNavItem(s.href)
-          })
-        })
-        this.sections = ref(sections)
+      sections.forEach((s) => {
+        s.length = 0
+        s.images = []
       })
+      this.sections = ref(sections)
+      this.preloadSections()
     })
     this.rendition = ref(
       this.epub.renderTo(el, {

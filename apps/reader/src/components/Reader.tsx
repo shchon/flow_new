@@ -448,7 +448,13 @@ function BookPane({ tab, onMouseDown }: BookPaneProps) {
             rendered && 'hidden',
             background,
           )}
-        />
+        >
+          <div className="flex h-full items-center justify-center">
+            <span className="typescale-body-medium text-on-surface/80">
+              正在加载图书…
+            </span>
+          </div>
+        </div>
         <TextSelectionMenu tab={tab} />
         <Annotations tab={tab} />
       </div>

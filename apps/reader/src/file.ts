@@ -6,9 +6,22 @@ import { BookRecord, db } from './db'
 import { mapExtToMimes } from './mime'
 import { unpack } from './sync'
 
-export async function fileToEpub(file: File) {
+const epubCache = new Map<string, Book>()
+
+export async function fileToEpub(file: File, cacheKey?: string) {
+  if (cacheKey) {
+    const cached = epubCache.get(cacheKey)
+    if (cached) return cached
+  }
+
   const data = await file.arrayBuffer()
-  return ePub(data)
+  const book = ePub(data)
+
+  if (cacheKey) {
+    epubCache.set(cacheKey, book)
+  }
+
+  return book
 }
 
 export async function handleFiles(files: Iterable<File>) {
@@ -41,11 +54,12 @@ export async function handleFiles(files: Iterable<File>) {
 }
 
 export async function addBook(file: File) {
-  const epub = await fileToEpub(file)
+  const id = uuidv4()
+  const epub = await fileToEpub(file, id)
   const metadata = await epub.loaded.metadata
 
   const book: BookRecord = {
-    id: uuidv4(),
+    id,
     name: file.name || `${metadata.title}.epub`,
     size: file.size,
     metadata,
@@ -54,7 +68,7 @@ export async function addBook(file: File) {
     annotations: [],
   }
   db?.books.add(book)
-  addFile(book.id, file, epub)
+  addFile(id, file, epub)
   return book
 }
 
@@ -62,7 +76,7 @@ export async function addFile(id: string, file: File, epub?: Book) {
   db?.files.add({ id, file })
 
   if (!epub) {
-    epub = await fileToEpub(file)
+    epub = await fileToEpub(file, id)
   }
 
   const url = await epub.coverUrl()
