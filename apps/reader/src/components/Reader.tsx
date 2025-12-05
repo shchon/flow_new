@@ -501,6 +501,7 @@ function clearVocabularyHighlights(doc: Document) {
 interface VocabItem {
   word: string
   explanation?: string
+  context?: string
 }
 
 function escapeRegExp(str: string) {

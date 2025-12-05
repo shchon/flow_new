@@ -213,7 +213,7 @@ const AiExplanationView: React.FC<ViewProps> = ({ word }) => {
       if (prev.vocabulary.some((v) => v.word === word)) return prev
       return {
         ...prev,
-        vocabulary: [...prev.vocabulary, { word, explanation }],
+        vocabulary: [...prev.vocabulary, { word, explanation, context }],
       }
     })
   }

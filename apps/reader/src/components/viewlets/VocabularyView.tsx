@@ -54,9 +54,28 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({ onClose }) => {
     try {
       if (!aiState.vocabulary.length) return
       const lines = aiState.vocabulary.map((item) => {
+        // Keep word simple (no newlines in word field)
         const front = (item.word || '').replace(/\r?\n/g, ' ').trim()
-        const back = (item.explanation || '').replace(/\r?\n/g, ' ').trim()
-        return `${front}\t${back}`
+        
+        // Preserve formatting in explanation by converting newlines to <br>
+        const back = (item.explanation || '')
+          .replace(/\r?\n/g, '<br>')
+          .trim()
+        
+        // Preserve formatting in context by converting newlines to <br>
+        let context = (item.context || '')
+          .replace(/\r?\n/g, '<br>')
+          .trim()
+        
+        // Bold the word in context (case-insensitive) using <strong> tag
+        if (context && front) {
+          // Escape special regex characters in the word
+          const escapedWord = front.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+          const regex = new RegExp(`\\b(${escapedWord})\\b`, 'gi')
+          context = context.replace(regex, '<strong>$1</strong>')
+        }
+        
+        return `${front}\t${back}\t${context}`
       })
       const data = lines.join('\n')
       const blob = new Blob([data], { type: 'text/tab-separated-values;charset=utf-8' })

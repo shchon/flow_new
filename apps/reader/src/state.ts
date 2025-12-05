@@ -97,6 +97,7 @@ export interface AiConfig {
 export interface VocabularyItem {
   word: string
   explanation?: string
+  context?: string
 }
 
 export interface AiState {
