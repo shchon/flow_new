@@ -44,6 +44,14 @@ function useSize(
   maxSize = Number.POSITIVE_INFINITY,
 ) {
   const [size, setSize] = useState(preferredSize)
+  
+  // Update size when preferredSize changes
+  useEffect(() => {
+    if (preferredSize !== undefined) {
+      setSize(preferredSize)
+    }
+  }, [preferredSize])
+  
   const resize = useCallback(
     (delta: number) => {
       setSize((size) => size && clamp(size + delta, minSize, maxSize))

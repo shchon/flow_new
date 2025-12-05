@@ -38,8 +38,8 @@ export const RightSidebar: React.FC = () => {
 
   const containerClass = mobile
     ? aiState.panelPosition === 'top'
-      ? 'RightSidebar fixed inset-x-0 top-0 z-40 bg-surface flex flex-col border-b border-surface-variant shadow-xl rounded-b-2xl'
-      : 'RightSidebar fixed inset-x-0 bottom-0 z-40 bg-surface flex flex-col border-t border-surface-variant shadow-xl rounded-t-2xl'
+      ? 'RightSidebar fixed inset-x-0 top-0 z-50 bg-surface flex flex-col border-b border-surface-variant shadow-xl rounded-b-2xl pointer-events-auto'
+      : 'RightSidebar fixed inset-x-0 bottom-0 z-50 bg-surface flex flex-col border-t border-surface-variant shadow-xl rounded-t-2xl pointer-events-auto'
     : 'RightSidebar bg-surface flex flex-col border-l border-surface-variant'
 
   const handleClose = () => {
@@ -56,17 +56,20 @@ export const RightSidebar: React.FC = () => {
     ? { height: expanded ? '90vh' : '33vh' }
     : undefined
 
+  const desktopStyle = mobile ? mobileStyle : { width: size }
+
   return (
     <>
       {mobile && (
         <div
-          className="fixed inset-0 z-30 bg-black/30"
+          className="fixed inset-0 z-40 bg-black/30"
+          style={{ pointerEvents: 'auto' }}
           onClick={handleClose}
         />
       )}
       <div
         className={containerClass}
-        style={mobile ? mobileStyle : { width: size }}
+        style={desktopStyle}
       >
         {mobile && (
           <button
@@ -87,9 +90,15 @@ export const RightSidebar: React.FC = () => {
             <MdClose size={18} />
           </button>
         </div>
-        <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
           {mobile ? (
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y">
+            <div 
+              className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain"
+              style={{ 
+                WebkitOverflowScrolling: 'touch',
+                touchAction: 'pan-y',
+              }}
+            >
               <AiExplanationView word={aiState.selectedWord} />
             </div>
           ) : (
@@ -135,11 +144,11 @@ const DictionaryView: React.FC<ViewProps> = ({ word }) => {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col overflow-hidden">
       <iframe
         title="Dictionary"
         src={src}
-        className="h-full w-full flex-1 border-0"
+        className="h-full w-full flex-1 border-0 overflow-auto"
         sandbox="allow-same-origin allow-forms"
         name="youdaoFrame"
         frameBorder={0}
@@ -210,7 +219,7 @@ const AiExplanationView: React.FC<ViewProps> = ({ word }) => {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden p-4 text-sm text-on-surface-variant select-text">
+    <div className="flex h-full flex-col p-4 text-sm text-on-surface-variant select-text">
       <div className="mb-2 flex items-center justify-between flex-none">
         <div className="text-base font-medium truncate" title={word}>
           {word}
@@ -223,7 +232,13 @@ const AiExplanationView: React.FC<ViewProps> = ({ word }) => {
           Add
         </button>
       </div>
-      <div className="flex-1 min-h-0 overflow-auto">
+      <div 
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden"
+        style={{ 
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y',
+        }}
+      >
         {loading && (
           <div className="mb-2 text-xs text-outline">Loading AI explanation...</div>
         )}

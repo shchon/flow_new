@@ -87,6 +87,7 @@ export class BookTab extends BaseTab {
   results?: IMatch[]
   activeResultID?: string
   rendered = false
+  readingMode: 'paginated' | 'scrolled' = 'paginated'
 
   get container() {
     return this?.rendition?.manager?.container as HTMLDivElement | undefined
@@ -401,6 +402,7 @@ export class BookTab extends BaseTab {
       this.sections = ref(sections)
       this.preloadSections()
     })
+    
     this.rendition = ref(
       this.epub.renderTo(el, {
         width: '100%',
@@ -471,7 +473,6 @@ export class BookTab extends BaseTab {
 
   constructor(public book: BookRecord) {
     super(book.id, book.name)
-
     // don't subscribe `db.books` in `constructor`, it will
     // 1. update the unproxied instance, which is not reactive
     // 2. update unnecessary state (e.g. percentage) of all tabs with the same book

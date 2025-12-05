@@ -402,27 +402,48 @@ function BookPane({ tab, onMouseDown }: BookPaneProps) {
   // Highlight vocabulary words across all books
   useEffect(() => {
     if (!iframe) return
-    const doc = iframe.document
-    if (!doc || !doc.body) return
 
     const vocab = aiState.vocabulary
-    if (!vocab || vocab.length === 0) {
-      // Clear previous highlights and tooltip if any
-      clearVocabularyHighlights(doc)
-      return
-    }
-
     const tooltipFontSize = settings.vocabTooltipFontSize ?? 12
 
-    highlightVocabularyInDocument(doc, vocab, (word) => {
-      setAiState((prev) => ({
-        ...prev,
-        vocabulary: prev.vocabulary.filter(
-          (v) => v.word.toLowerCase() !== word.toLowerCase(),
-        ),
-      }))
-    }, tooltipFontSize)
-  }, [iframe, aiState.vocabulary, setAiState, settings.vocabTooltipFontSize])
+    const applyHighlights = () => {
+      // Get fresh document reference each time
+      const doc = iframe.document
+      if (!doc || !doc.body) return
+
+      if (!vocab || vocab.length === 0) {
+        clearVocabularyHighlights(doc)
+        return
+      }
+
+      highlightVocabularyInDocument(doc, vocab, (word) => {
+        setAiState((prev) => ({
+          ...prev,
+          vocabulary: prev.vocabulary.filter(
+            (v) => v.word.toLowerCase() !== word.toLowerCase(),
+          ),
+        }))
+      }, tooltipFontSize)
+    }
+
+    // Apply highlights initially
+    applyHighlights()
+
+    // Reapply highlights when user navigates (e.g., page turn)
+    const rendition = tab.rendition
+    if (rendition) {
+      const handleRelocated = () => {
+        // Small delay to ensure DOM is ready
+        setTimeout(applyHighlights, 150)
+      }
+      
+      rendition.on('relocated', handleRelocated)
+      
+      return () => {
+        rendition.off('relocated', handleRelocated)
+      }
+    }
+  }, [iframe, aiState.vocabulary, setAiState, settings.vocabTooltipFontSize, tab.rendition])
 
   return (
     <div className={clsx('flex h-full flex-col', mobile && 'py-[3vw]')}>
@@ -556,17 +577,8 @@ function highlightVocabularyInDocument(
     node.parentNode?.replaceChild(frag, node)
   }
 
-  // Inject styles
-  let style = doc.getElementById('vocab-style') as HTMLStyleElement | null
-  if (!style) {
-    style = doc.createElement('style')
-    style.id = 'vocab-style'
-    doc.head.appendChild(style)
-  }
-  const titleFontSize = tooltipFontSize
-  const bodyFontSize = Math.max(tooltipFontSize - 1, 8)
-
-  style.textContent = `
+  // Inject styles to both iframe and main window
+  const styleContent = (titleFontSize: number, bodyFontSize: number) => `
     .vocab-highlight {
       text-decoration-line: underline;
       text-decoration-style: wavy;
@@ -577,10 +589,11 @@ function highlightVocabularyInDocument(
     }
     #vocab-tooltip {
       position: absolute;
-      min-width: 220px;
-      max-width: 360px;
+      min-width: 73px;
+      max-width: 120px;
       max-height: 320px;
       overflow-y: auto;
+      overflow-x: auto;
       background: #ffffff;
       color: #111827;
       border-radius: 0.5rem;
@@ -588,7 +601,13 @@ function highlightVocabularyInDocument(
       padding: 0.5rem 0.75rem;
       font-size: ${titleFontSize}px !important;
       line-height: 1.5;
-      z-index: 9999;
+      z-index: 99999 !important;
+    }
+    @media (max-width: 640px) {
+      #vocab-tooltip {
+        min-width: 200px;
+        max-width: 90vw;
+      }
     }
     #vocab-tooltip-title {
       font-weight: 600;
@@ -602,15 +621,41 @@ function highlightVocabularyInDocument(
     }
   `
 
+  const titleFontSize = tooltipFontSize
+  const bodyFontSize = Math.max(tooltipFontSize - 1, 8)
+  
+  // Inject to iframe document
+  let style = doc.getElementById('vocab-style') as HTMLStyleElement | null
+  if (!style) {
+    style = doc.createElement('style')
+    style.id = 'vocab-style'
+    doc.head.appendChild(style)
+  }
+  style.textContent = styleContent(titleFontSize, bodyFontSize)
+  
+  // Also inject to main window document for mobile tooltips
+  let mainStyle = window.document.getElementById('vocab-style-main') as HTMLStyleElement | null
+  if (!mainStyle) {
+    mainStyle = window.document.createElement('style')
+    mainStyle.id = 'vocab-style-main'
+    window.document.head.appendChild(mainStyle)
+  }
+  mainStyle.textContent = styleContent(titleFontSize, bodyFontSize)
+
   // Attach click handler
   const handleClick = (e: MouseEvent) => {
-    const target = e.target as HTMLElement | null
+    const target = e.target as HTMLElement
     if (!target) return
     const span = target.closest('.vocab-highlight') as HTMLElement | null
 
-    const existing = doc.getElementById('vocab-tooltip')
-    if (existing && existing.parentNode) {
-      existing.parentNode.removeChild(existing)
+    // Remove existing tooltip from both iframe and main window
+    const existingInIframe = doc.getElementById('vocab-tooltip')
+    if (existingInIframe && existingInIframe.parentNode) {
+      existingInIframe.parentNode.removeChild(existingInIframe)
+    }
+    const existingInWindow = window.document.getElementById('vocab-tooltip')
+    if (existingInWindow && existingInWindow.parentNode) {
+      existingInWindow.parentNode.removeChild(existingInWindow)
     }
 
     if (!span) return
@@ -619,19 +664,26 @@ function highlightVocabularyInDocument(
     const item = vocabulary.find((v) => v.word.toLowerCase() === word)
 
     const rect = span.getBoundingClientRect()
-    const tooltip = doc.createElement('div')
+    
+    // Detect mobile to decide where to create tooltip
+    const windowWidth = window.innerWidth
+    const isMobileDevice = windowWidth <= 640
+    
+    // Create tooltip in main window for mobile (for fixed positioning), in iframe for desktop
+    const targetDoc = isMobileDevice ? window.document : doc
+    const tooltip = targetDoc.createElement('div')
     tooltip.id = 'vocab-tooltip'
 
-    const title = doc.createElement('div')
+    const title = targetDoc.createElement('div')
     title.id = 'vocab-tooltip-title'
     title.style.display = 'flex'
     title.style.alignItems = 'center'
     title.style.justifyContent = 'flex-start'
 
-    const wordSpan = doc.createElement('span')
+    const wordSpan = targetDoc.createElement('span')
     wordSpan.textContent = item?.word || span.textContent || ''
 
-    const deleteBtn = doc.createElement('button')
+    const deleteBtn = targetDoc.createElement('button')
     deleteBtn.textContent = 'Delete'
     deleteBtn.style.fontSize = '11px'
     deleteBtn.style.color = '#b91c1c'
@@ -650,7 +702,7 @@ function highlightVocabularyInDocument(
     title.appendChild(wordSpan)
     title.appendChild(deleteBtn)
 
-    const body = doc.createElement('div')
+    const body = targetDoc.createElement('div')
     body.id = 'vocab-tooltip-body'
     body.textContent = item?.explanation || 'No explanation saved yet.'
 
@@ -662,9 +714,28 @@ function highlightVocabularyInDocument(
     const viewportHeight = doc.defaultView?.innerHeight ?? 0
     const viewportWidth = doc.defaultView?.innerWidth ?? 0
 
+    // Detect mobile by checking main window width, not iframe width
+    const mainWindowWidth = window.innerWidth
+    const isMobile = mainWindowWidth <= 640 // Same as useMobile hook
+
+    // Detect RightSidebar width to avoid overlap (desktop only)
+    let rightSidebarWidth = 0
+    
+    if (!isMobile) {
+      try {
+        const rightSidebar = window.document.querySelector('.RightSidebar')
+        if (rightSidebar) {
+          const sidebarRect = rightSidebar.getBoundingClientRect()
+          rightSidebarWidth = sidebarRect.width
+        }
+      } catch (e) {
+        // Ignore errors if sidebar not found
+      }
+    }
+
     // First attach to measure size
     tooltip.style.visibility = 'hidden'
-    doc.body.appendChild(tooltip)
+    targetDoc.body.appendChild(tooltip)
     const tipRect = tooltip.getBoundingClientRect()
 
     let top = rect.bottom + 6
@@ -675,17 +746,35 @@ function highlightVocabularyInDocument(
     }
 
     let left = rect.left
-    const maxLeft = viewportWidth - tipRect.width - 8
-    if (left > maxLeft) left = maxLeft
-    if (left < 8) left = 8
-
-    tooltip.style.left = `${left + scrollX}px`
-    tooltip.style.top = `${top + scrollY}px`
+    
+    if (isMobileDevice) {
+      // Mobile: use fixed positioning and center on screen
+      tooltip.style.position = 'fixed'
+      const mainWindowHeight = window.innerHeight
+      left = (windowWidth - tipRect.width) / 2
+      top = (mainWindowHeight - tipRect.height) / 2
+    } else {
+      // Desktop: avoid right sidebar
+      const padding = 16
+      const availableWidth = viewportWidth - rightSidebarWidth - padding
+      const maxLeft = availableWidth - tipRect.width
+      if (left > maxLeft) left = maxLeft
+      if (left < 8) left = 8
+      
+      left = left + scrollX
+      top = top + scrollY
+    }
+    
+    tooltip.style.left = `${left}px`
+    tooltip.style.top = `${top}px`
     tooltip.style.visibility = 'visible'
   }
 
   // To avoid stacking multiple handlers, remove previous and add new
-  doc.removeEventListener('click', (doc as any)._vocabClickHandler as any)
+  const previousHandler = (doc as any)._vocabClickHandler
+  if (previousHandler) {
+    doc.removeEventListener('click', previousHandler)
+  }
   ;(doc as any)._vocabClickHandler = handleClick
   doc.addEventListener('click', handleClick)
 }
