@@ -710,10 +710,7 @@ function highlightVocabularyInDocument(
     tooltip.appendChild(title)
     tooltip.appendChild(body)
 
-    const scrollX = doc.defaultView?.scrollX ?? 0
-    const scrollY = doc.defaultView?.scrollY ?? 0
     const viewportHeight = doc.defaultView?.innerHeight ?? 0
-    const viewportWidth = doc.defaultView?.innerWidth ?? 0
 
     // Detect mobile by checking main window width, not iframe width
     const mainWindowWidth = window.innerWidth

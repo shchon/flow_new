@@ -16,7 +16,7 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({ onClose }) => {
 
   const items = useMemo(() => {
     const q = query.trim().toLowerCase()
-    let filtered = q
+    const filtered = q
       ? aiState.vocabulary.filter((v) => {
           return (
             v.word.toLowerCase().includes(q) ||
