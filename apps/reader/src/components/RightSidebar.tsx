@@ -91,26 +91,15 @@ export const RightSidebar: React.FC = () => {
           </button>
         </div>
         <div className="flex-1 flex flex-col min-h-0">
-          {mobile ? (
-            <div 
-              className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain"
-              style={{ 
-                WebkitOverflowScrolling: 'touch',
-                touchAction: 'pan-y',
-              }}
-            >
-              <AiExplanationView word={aiState.selectedWord} />
-            </div>
-          ) : (
-            <>
-              <div className="flex-[4] min-h-0 border-b border-surface-variant">
-                <AiExplanationView word={aiState.selectedWord} />
-              </div>
-              <div className="flex-[6] min-h-0">
-                <DictionaryView word={aiState.selectedWord} />
-              </div>
-            </>
-          )}
+          <div 
+            className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain"
+            style={{ 
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-y',
+            }}
+          >
+            <AiExplanationView word={aiState.selectedWord} />
+          </div>
         </div>
       </div>
     </>
@@ -119,42 +108,6 @@ export const RightSidebar: React.FC = () => {
 
 interface ViewProps {
   word?: string
-}
-
-const DictionaryView: React.FC<ViewProps> = ({ word }) => {
-  const [aiState] = useAiState()
-
-  if (!word) {
-    return (
-      <div className="flex h-full items-center justify-center p-4 text-sm text-outline">
-        Select a word to see dictionary
-      </div>
-    )
-  }
-
-  const template = aiState.config.dictionaryUrlTemplate
-  let src: string
-  if (template && template.includes('{word}')) {
-    src = template.replace(/\{word\}/g, encodeURIComponent(word))
-  } else if (template && !template.includes('{word}')) {
-    const sep = template.includes('?') ? '&' : '?'
-    src = `${template}${sep}q=${encodeURIComponent(word)}`
-  } else {
-    src = `https://cn.bing.com/dict/search?q=${encodeURIComponent(word)}`
-  }
-
-  return (
-    <div className="flex h-full flex-col overflow-hidden">
-      <iframe
-        title="Dictionary"
-        src={src}
-        className="h-full w-full flex-1 border-0 overflow-auto"
-        sandbox="allow-same-origin allow-forms"
-        name="youdaoFrame"
-        frameBorder={0}
-      />
-    </div>
-  )
 }
 
 const AiExplanationView: React.FC<ViewProps> = ({ word }) => {
@@ -213,7 +166,7 @@ const AiExplanationView: React.FC<ViewProps> = ({ word }) => {
       if (prev.vocabulary.some((v) => v.word === word)) return prev
       return {
         ...prev,
-        vocabulary: [...prev.vocabulary, { word, explanation, context }],
+        vocabulary: [...prev.vocabulary, { word, explanation, context, addedAt: Date.now() }],
       }
     })
   }

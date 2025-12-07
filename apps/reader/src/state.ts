@@ -98,6 +98,7 @@ export interface VocabularyItem {
   word: string
   explanation?: string
   context?: string
+  addedAt?: number // timestamp when the word was added
 }
 
 export interface AiState {

@@ -590,8 +590,8 @@ function highlightVocabularyInDocument(
     }
     #vocab-tooltip {
       position: absolute;
-      min-width: 73px;
-      max-width: 120px;
+      min-width: 146px;
+      max-width: 240px;
       max-height: 320px;
       overflow-y: auto;
       overflow-x: auto;
@@ -666,12 +666,12 @@ function highlightVocabularyInDocument(
 
     const rect = span.getBoundingClientRect()
     
-    // Detect mobile to decide where to create tooltip
+    // Detect mobile to decide positioning strategy
     const windowWidth = window.innerWidth
     const isMobileDevice = windowWidth <= 640
     
-    // Create tooltip in main window for mobile (for fixed positioning), in iframe for desktop
-    const targetDoc = isMobileDevice ? window.document : doc
+    // Always create tooltip in main window to ensure it appears above RightSidebar
+    const targetDoc = window.document
     const tooltip = targetDoc.createElement('div')
     tooltip.id = 'vocab-tooltip'
 
@@ -748,22 +748,24 @@ function highlightVocabularyInDocument(
 
     let left = rect.left
     
+    // Always use fixed positioning since tooltip is in main window
+    tooltip.style.position = 'fixed'
+    
     if (isMobileDevice) {
-      // Mobile: use fixed positioning and center on screen
-      tooltip.style.position = 'fixed'
+      // Mobile: center on screen
       const mainWindowHeight = window.innerHeight
       left = (windowWidth - tipRect.width) / 2
       top = (mainWindowHeight - tipRect.height) / 2
     } else {
-      // Desktop: avoid right sidebar
+      // Desktop: position near the word, avoid right sidebar
       const padding = 16
-      const availableWidth = viewportWidth - rightSidebarWidth - padding
+      const mainWindowWidth = window.innerWidth
+      const availableWidth = mainWindowWidth - rightSidebarWidth - padding
       const maxLeft = availableWidth - tipRect.width
       if (left > maxLeft) left = maxLeft
       if (left < 8) left = 8
       
-      left = left + scrollX
-      top = top + scrollY
+      // No need to add scrollX/scrollY for fixed positioning
     }
     
     tooltip.style.left = `${left}px`

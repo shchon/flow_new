@@ -66,7 +66,7 @@ export const TextSelectionMenu: React.FC<TextSelectionMenuProps> = ({
     if (mobile) return
 
     const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, '')
-    const expected = normalize(settings.aiHotkey || 'Ctrl+Shift+Y')
+    const expected = normalize(settings.aiHotkey || 'Alt+S')
 
     const handleKey = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase()
@@ -144,7 +144,40 @@ export const TextSelectionMenu: React.FC<TextSelectionMenuProps> = ({
       ? (common as Element)
       : common.parentElement
 
-  const fullText = elementNode?.textContent?.trim() || text
+  // Extract only the sentence containing the selected text
+  const extractSentence = (fullText: string, selectedText: string): string => {
+    // Find the position of the selected text
+    const index = fullText.indexOf(selectedText)
+    if (index === -1) return selectedText
+    
+    // Common sentence endings
+    const sentenceEndings = /[.!?。！？]/
+    
+    // Find the start of the sentence (look backwards for sentence ending or start of text)
+    let start = 0
+    for (let i = index - 1; i >= 0; i--) {
+      const char = fullText[i]
+      if (char && sentenceEndings.test(char)) {
+        start = i + 1
+        break
+      }
+    }
+    
+    // Find the end of the sentence (look forwards for sentence ending or end of text)
+    let end = fullText.length
+    for (let i = index + selectedText.length; i < fullText.length; i++) {
+      const char = fullText[i]
+      if (char && sentenceEndings.test(char)) {
+        end = i + 1
+        break
+      }
+    }
+    
+    return fullText.slice(start, end).trim()
+  }
+
+  const paragraphText = elementNode?.textContent?.trim() || text
+  const fullText = extractSentence(paragraphText, text)
 
   if (text !== currentText || fullText !== currentContext) {
     setCurrentText(text)

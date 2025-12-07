@@ -16,12 +16,20 @@ export const VocabularyView: React.FC<VocabularyViewProps> = ({ onClose }) => {
 
   const items = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return aiState.vocabulary
-    return aiState.vocabulary.filter((v) => {
-      return (
-        v.word.toLowerCase().includes(q) ||
-        (v.explanation && v.explanation.toLowerCase().includes(q))
-      )
+    let filtered = q
+      ? aiState.vocabulary.filter((v) => {
+          return (
+            v.word.toLowerCase().includes(q) ||
+            (v.explanation && v.explanation.toLowerCase().includes(q))
+          )
+        })
+      : aiState.vocabulary
+    
+    // Sort by addedAt timestamp in descending order (newest first)
+    return [...filtered].sort((a, b) => {
+      const timeA = a.addedAt ?? 0
+      const timeB = b.addedAt ?? 0
+      return timeB - timeA // descending order
     })
   }, [aiState.vocabulary, query])
 

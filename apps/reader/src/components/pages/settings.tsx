@@ -17,32 +17,88 @@ export const Settings: React.FC = () => {
   const [settings, setSettings] = useSettings()
   const [aiState, setAiState] = useAiState()
   const t = useTranslation('settings')
+  const [activeTab, setActiveTab] = useState<'ai' | 'sync' | 'basic'>('ai')
 
   return (
     <Page headline="">
+      {/* Tab Navigation */}
+      <div className="flex border-b border-surface-variant mb-6">
+        <button
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'ai'
+              ? 'border-b-2 border-primary text-primary'
+              : 'text-on-surface-variant hover:text-on-surface'
+          }`}
+          onClick={() => setActiveTab('ai')}
+        >
+          AI
+        </button>
+        <button
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'sync'
+              ? 'border-b-2 border-primary text-primary'
+              : 'text-on-surface-variant hover:text-on-surface'
+          }`}
+          onClick={() => setActiveTab('sync')}
+        >
+          {t('synchronization.title') || '同步'}
+        </button>
+        <button
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'basic'
+              ? 'border-b-2 border-primary text-primary'
+              : 'text-on-surface-variant hover:text-on-surface'
+          }`}
+          onClick={() => setActiveTab('basic')}
+        >
+          {t('basic') || '基本'}
+        </button>
+      </div>
+
       <div className="pr-2 space-y-6">
-        <Item title={t('language')}>
-          <Select
-            value={locale}
-            onChange={(e: ChangeEvent<HTMLSelectElement>) => {
-              push(asPath, undefined, { locale: e.target.value })
-            }}
-          >
-            <option value="en-US">English</option>
-            <option value="zh-CN">简体中文</option>
-            <option value="ja-JP">日本語</option>
-          </Select>
-        </Item>
-        <AiConfiguration aiState={aiState} setAiState={setAiState} t={t} />
-        <Item title={t('ai_hotkey') || 'AI Shortcuts'}>
-          <div className="space-y-2">
-            <p className="text-sm text-on-surface-variant">
-              设置电脑端触发 AI 解释的快捷键，例如 Ctrl+Shift+Y。
-            </p>
-            <TextField
-              name="ai-hotkey"
-              placeholder="e.g. Ctrl+Shift+Y"
-              value={settings.aiHotkey || ''}
+        {/* AI Tab */}
+        {activeTab === 'ai' && (
+          <>
+            <AiConfiguration aiState={aiState} setAiState={setAiState} t={t} />
+          </>
+        )}
+
+        {/* Sync Tab */}
+        {activeTab === 'sync' && (
+          <>
+            <WebDavSync
+              settings={settings}
+              setSettings={setSettings}
+              aiState={aiState}
+              setAiState={setAiState}
+            />
+          </>
+        )}
+
+        {/* Basic Tab */}
+        {activeTab === 'basic' && (
+          <>
+            <Item title={t('language')}>
+              <Select
+                value={locale}
+                onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+                  push(asPath, undefined, { locale: e.target.value })
+                }}
+              >
+                <option value="en-US">English</option>
+                <option value="zh-CN">简体中文</option>
+                <option value="ja-JP">日本語</option>
+              </Select>
+            </Item>
+            <Item title={t('ai_hotkey') || 'AI Shortcuts'}>
+              <div className="space-y-2">
+                <p className="text-sm text-on-surface-variant">
+                  设置电脑端触发 AI 解释的快捷键，例如 Alt+S。
+                </p>
+                <TextField
+                  name="ai-hotkey"
+                  placeholder="e.g. Alt+S"
+                  value={settings.aiHotkey || 'Alt+S'}
               onChange={(e: ChangeEvent<HTMLInputElement>) =>
                 setSettings({ ...settings, aiHotkey: e.target.value })
               }
@@ -77,28 +133,24 @@ export const Settings: React.FC = () => {
                   setSettings({ ...settings, aiHotkey: combo })
                 }
               }}
-            />
-          </div>
-        </Item>
-        <WebDavSync
-          settings={settings}
-          setSettings={setSettings}
-          aiState={aiState}
-          setAiState={setAiState}
-        />
-        <Item title={t('cache')}>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              window.localStorage.clear()
-              Dexie.getDatabaseNames().then((names) => {
-                names.forEach((n) => Dexie.delete(n))
-              })
-            }}
-          >
-            {t('cache.clear')}
-          </Button>
-        </Item>
+                />
+              </div>
+            </Item>
+            <Item title={t('cache')}>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  window.localStorage.clear()
+                  Dexie.getDatabaseNames().then((names) => {
+                    names.forEach((n) => Dexie.delete(n))
+                  })
+                }}
+              >
+                {t('cache.clear')}
+              </Button>
+            </Item>
+          </>
+        )}
       </div>
     </Page>
   )
@@ -376,23 +428,13 @@ const AiConfiguration: React.FC<{
             </Button>
           </div>
         </div>
-        <TextField
+        <textarea
           name="ai-prompt"
-          as="textarea"
-          hideLabel
           placeholder="Custom prompt. You can use {word} and {context} as placeholders."
           value={config.prompt}
-          className="min-h-[100px]"
+          className="w-full min-h-[200px] rounded-lg border border-surface-variant bg-surface px-4 py-3 text-sm outline-none focus:border-primary resize-y"
           onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
             setConfig({ ...config, prompt: e.target.value })
-          }
-        />
-        <TextField
-          name="dictionary-url-template"
-          placeholder="Dictionary URL template, e.g. https://cn.bing.com/dict/search?q={word}"
-          value={config.dictionaryUrlTemplate}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            setConfig({ ...config, dictionaryUrlTemplate: e.target.value })
           }
         />
         <div className="flex gap-2">
